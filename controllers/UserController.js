@@ -24,23 +24,6 @@ module.exports = {
         });
     },
 
-    showLogin: function (req, res) {
-        res.render('user/login');
-    },
-
-    showRegistration: function (req, res) {
-        res.render('user/register');
-    },
-
-    showProfile: function (req, res) {
-        res.render('user/profile', {userId:req.session.userId , username:req.session.username});
-    },
-
-    showLogout: function (req, res) {
-        req.session.destroy();
-        res.render('index');
-    },
-
     /**
      * UserController.show()
      */
@@ -82,7 +65,7 @@ module.exports = {
                     error: err
                 });
             }
-
+            req.session.user = User;
             return res.status(201).json(User);
         });
     },
@@ -94,11 +77,19 @@ module.exports = {
                 err.status = 401;
                 return res.redirect('/user/login');
             } else {
-                req.session.userId = user._id;
-                req.session.username = user.username;
-                return res.render('index', {userId: req.session.userId, username:req.session.username});
+                /*
+                    req.session.userId = user._id;
+                    req.session.username = user.username;
+                */
+                req.session.user = user;
+                return res.json(user);
             }
         });
+    },
+
+    logout: function (req, res) {
+        req.session.destroy();
+        res.status(205).json();
     },
 
     /**

@@ -17,16 +17,10 @@ db.on('error', console.error.bind(console,
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/UserRoutes');
-var notesItemRouter = require('./routes/NoteItemRoutes');
+//var notesItemRouter = require('./routes/NoteItemRoutes');
+var gameRouter = require('./routes/GameRoutes');
 
 var app = express();
-
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-var hbs = require('hbs');
-app.set("view engine", "hbs");
-app.use(express.static(__dirname + "/public"));
-hbs.registerPartials(__dirname + "/views/partials");
 
 const oneDay = 1000 * 60 * 60 * 24;
 var session = require('express-session');
@@ -66,7 +60,8 @@ app.use(express.static(path.join(__dirname, 'public')));
    
 app.use('/', indexRouter);
 app.use('/user', usersRouter);
-app.use('/items', notesItemRouter);
+//TODO Restrict access to /game to connected users + restrict game api interactions the access to user that created the game
+app.use('/game', gameRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -81,7 +76,7 @@ app.use(function(err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.json(res.locals);
 });
 
 module.exports = app;

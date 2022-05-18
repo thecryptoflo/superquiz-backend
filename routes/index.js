@@ -1,10 +1,11 @@
 var express = require('express');
 var router = express.Router();
+var MainController = require('../controllers/MainController.js')
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
   //console.log(req.session.userId);
-  res.render('index', { userId: req.session.userId, username:req.session.username });
+  res.json("Hey");
 });
 
 module.exports = router;
