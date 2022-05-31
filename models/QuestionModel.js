@@ -2,10 +2,16 @@ var mongoose = require('mongoose');
 var Schema   = mongoose.Schema;
 
 var QuestionSchema = new Schema({
-    category : String,
+    category : {
+        type: Number,
+        ref: 'Category'
+    },
     type : String,
     difficulty : String, //Either 'easy', 'medium', 'hard' or 0,1,2 if simpler
-    description : String,
+    description : {
+        type : String,
+        unique : true
+    },
     correct_answer : String,
     incorrect_answers : [ String ]
 }, {
@@ -22,18 +28,6 @@ var QuestionSchema = new Schema({
         }
     }
 });
-
-QuestionSchema.pre('save', function (next) {
-    var self = this;
-    Question.findOne({question:self.description}, function (err, question) {
-        if (question === null){
-            next();
-        }else{
-            console.log('Question exists: ',question.question);
-            next(new Error("Question exists!"));
-        }
-    });
-}) ;
 
 var Question = mongoose.model('Question', QuestionSchema);
 module.exports = Question;

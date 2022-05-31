@@ -4,9 +4,25 @@ var bcrypt = require('bcrypt');
 var SALT_WORK_FACTOR = 10;
 
 var UserSchema = new Schema({
-	'username' : String,
-	'password' : String,
-	'name' : String
+	'username' : {
+		type: String,
+		unique: true,
+		dropDups: true
+	},
+	'password' : String
+}, {
+	toObject: {
+		transform: function (doc, ret) {
+			delete ret.password;
+			delete ret.__v;
+		}
+	},
+	toJSON: {
+		transform: function (doc, ret) {
+			delete ret.password;
+			delete ret.__v;
+		}
+	}
 });
 
 UserSchema.statics.authenticate = function(username, password, callback){
@@ -40,5 +56,5 @@ UserSchema.pre('save', function(next) {
 });
 
 //module.exports = mongoose.model('users', UserSchema);
-var User = mongoose.model('users', UserSchema);
+var User = mongoose.model('User', UserSchema);
 module.exports = User;

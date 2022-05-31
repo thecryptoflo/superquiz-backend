@@ -7,12 +7,12 @@ var CategorySchema = new Schema({
 });
 
 CategorySchema.pre('save', function (next) {
-    var self = this;
-    Category.findById(self._id, function (err, category) {
+
+    Category.findById(this._id, function (err, category) {
         if (category === null){
             next();
         }else{
-            console.log('Category exists: ',self.category);
+            console.log('Category exists: ',category);
             next(new Error("Category exists!"));
         }
     });

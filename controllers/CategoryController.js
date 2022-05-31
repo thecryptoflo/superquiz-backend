@@ -12,7 +12,7 @@ module.exports = {
      */
     list: function (req, res) {
         //React demo
-        CategoryModel.find(function (err, Categories) {
+        CategoryModel.find({},{},{sort : {name: 1}},function (err, Categories) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when getting Category.',
@@ -20,7 +20,6 @@ module.exports = {
                 });
             }
 
-            //React demo
             return res.json(Categories);
         });
     }

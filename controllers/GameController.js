@@ -1,5 +1,6 @@
 var GameModel = require('../models/GameModel.js');
 var QuestionService = require('../services/QuestionService');
+const {ObjectId} = require("mongodb");
 
 /**
  * GameController.js
@@ -14,8 +15,9 @@ module.exports = {
     create: function (req, res) {
         var Game = new GameModel({
 			state : "CREATED",
-			created_at : undefined,
-			user : req.user, // Need middleware to append User to the request based on the session
+			created_at : new Date(),
+            query : undefined,
+			user : req.session.user,
 			rounds : [],
 			scores : [],
             round_number : undefined,
@@ -23,13 +25,24 @@ module.exports = {
 			total_time : 0
         });
 
-        QuestionService.getRandomQuestions()
-            .then((Questions) => {
+        /**
+         * Query possible (? = 0 or 1 elem):
+         * { category : cat_id?, difficulty : (easy|medium|hard)?}
+         * If value is invalid, we just ignore it
+         */
+        QuestionService.getRandomQuestions(QuestionService.checkQuery(req.body.query))
+            .then(([Questions, query]) => {
+                console.log("Final query",query);
+                Game.category = query.category;
+                Game.difficulty = query.difficulty;
+                //Game.markModified('query');
                 Questions.forEach(question => {
                     Game.rounds.push({
                         start_time: undefined,
                         end_time: undefined,
                         question: question,
+                        user_answer: undefined,
+                        is_correct: undefined,
                         score: undefined
                     })
                 });
@@ -60,7 +73,7 @@ module.exports = {
             .catch( err => console.log(err));
         */
 
-        GameModel.findOne({_id: id}, function (err, Game) {
+        GameModel.findOne({_id: id, user : ObjectId(req.session.user._id)}, function (err, Game) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when getting Game.',
@@ -107,7 +120,7 @@ module.exports = {
     answerQuestion: function (req, res) {
         var id = req.params.id;
 
-        GameModel.findOne({_id: id}, function (err, Game) {
+        GameModel.findOne({_id: id, user : ObjectId(req.session.user._id)}, function (err, Game) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when getting Game.',
@@ -157,7 +170,7 @@ module.exports = {
     nextQuestion: function (req, res) {
         var id = req.params.id;
 
-        GameModel.findOne({_id: id}, function (err, Game) {
+        GameModel.findOne({_id: id, user : ObjectId(req.session.user._id)}, function (err, Game) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when getting Game.',
@@ -222,6 +235,50 @@ module.exports = {
             }
 
             return res.json(Game.toClientProofObject());
+        });
+    },
+
+    /**
+     * GameController.showLeaderboard()
+     * Show best 10 scores of all time (a player can appear multiple times)s
+     */
+    showLeaderboard: function (req, res) {
+
+        GameModel.find({state: "ENDED"}, "created_at user category difficulty total total_time",{limit: 10, sort: {total : -1}},function (err, Leaderboard) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when getting Leaderboard.',
+                    error: err
+                });
+            }
+
+            return res.json(Leaderboard);
+        });
+    },
+
+    /**
+     * GameController.showHistory()
+     * Show last 10 games of a player
+     */
+    showPlayerHistory: function (req, res) {
+        var player_id = req.params.id;
+        var filter = {user: ObjectId(player_id)};
+        if(req.session.user._id !== player_id){
+            filter.state = "ENDED";
+        }
+        console.log(req.session.user, player_id);
+        console.log(filter);
+        GameModel.find(filter, "created_at state user category difficulty total total_time",
+            {limit: 10, sort: {created_at : -1}},
+            function (err, History) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when getting player History.',
+                    error: err
+                });
+            }
+
+            return res.json(History);
         });
     }
 }

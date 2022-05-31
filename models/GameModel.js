@@ -8,12 +8,19 @@ var RoundSchema = new Schema({
 		type: Schema.Types.ObjectId,
 		ref: 'Question'
 	},
+	user_answer: String,
+	is_correct : Boolean,
 	score: Number
 }, { _id : false });
 
 var GameSchema = new Schema({
 	'state' : String, // CREATED, PLAYING, PAUSED, ENDED ; PAUSED is the state between the question
 	'created_at' : Date,
+	'category' : {
+		type: Number,
+		ref: 'Category'
+	},
+	'difficulty' : String,
 	'user' : {
 	 	type: Schema.Types.ObjectId,
 	 	ref: 'User'
@@ -21,7 +28,7 @@ var GameSchema = new Schema({
 	'rounds' : [RoundSchema],
 	'round_number' : Number, // From 0 to 9
 	'total' : Number,
-	'total_time' : Number
+	'total_time' : Number,
 }, {
 		toObject: {
 			transform: function (doc, ret) {
@@ -35,26 +42,33 @@ var GameSchema = new Schema({
 		}
 	});
 
+GameSchema.pre('find', function() {
+	this.populate('user category');
+});
+
 GameSchema.pre('findOne', function() {
-	this.populate('rounds.question');
+	this.populate('user category rounds.question');
 });
 
 GameSchema.methods.toClientProofObject = function (){
 	let game = this.toObject();
-	switch (game.state) {
-		case "CREATED":
-			game.rounds = [];
-			break;
-		case "PLAYING":
-			let question = game.rounds[game.round_number].question;
+	if(game.state === "CREATED") {
+		game.rounds = [];
+	}
+	else {
+		game.rounds = game.rounds.slice(0,game.round_number + 1);
+
+		game.rounds.forEach((round, index) => {
+			let question = round.question;
 			question.answers = [...question.incorrect_answers];
 			question.answers.push(question.correct_answer);
 			question.answers.sort();
+			if(question.type === "boolean")
+				question.answers.reverse();
 			delete question.incorrect_answers;
-			delete question.correct_answer;
-		case "PAUSED":
-			game.rounds = game.rounds.slice(0,game.round_number + 1);
-			break;
+			if(index === game.round_number && game.state === "PLAYING")
+				delete round.question.correct_answer;
+		});
 	}
 
 	return game;
@@ -80,6 +94,8 @@ GameSchema.methods.endRound = function (answer){
 	this.state = "PAUSED";
 
 	let diff_time = (this.rounds[this.round_number].end_time - this.rounds[this.round_number].start_time)/1000;
+	this.rounds[this.round_number].user_answer = answer;
+	this.rounds[this.round_number].is_correct = (answer === this.rounds[this.round_number].question.correct_answer);
 	let score = (answer === this.rounds[this.round_number].question.correct_answer) ? 1.0 : 0.0;
 	console.log("Correct",score,"Score (not floored)",100 * score * Math.exp(-0.2*diff_time));
 	score = Math.floor(100 * score * Math.exp(-0.2*diff_time));

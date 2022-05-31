@@ -17,7 +17,6 @@ db.on('error', console.error.bind(console,
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/UserRoutes');
-//var notesItemRouter = require('./routes/NoteItemRoutes');
 var gameRouter = require('./routes/GameRoutes');
 
 var app = express();
@@ -57,10 +56,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+var authRequired = function (req, res, next){
+
+  if(req.session.user)
+    next()
+  else
+    return res.status(401).json();
+}
+
    
 app.use('/', indexRouter);
+
+app.use(authRequired);
+//Route defined here now need user to be connected to be accessed
 app.use('/user', usersRouter);
-//TODO Restrict access to /game to connected users + restrict game api interactions the access to user that created the game
 app.use('/game', gameRouter);
 
 // catch 404 and forward to error handler

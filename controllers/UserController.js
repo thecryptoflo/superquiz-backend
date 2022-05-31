@@ -4,6 +4,11 @@ var UserModel = require('../models/UserModel.js');
  *
  * @description :: Server-side logic for managing Users.
  */
+
+function isInputSafe(str) {
+    return /^[A-Za-z0-9_]*$/.test(str);
+}
+
 module.exports = {
 
     /**
@@ -17,10 +22,7 @@ module.exports = {
                     error: err
                 });
             }
-
             return res.json(Users);
-            //return res.render('user/list', {data:Users, userId:req.session.userId , username:req.session.username} );
-
         });
     },
 
@@ -52,14 +54,22 @@ module.exports = {
      * UserController.create()
      */
     create: function (req, res) {
+        if(!isInputSafe(req.body.username))
+            return res.status(400).json({message : "Username should only contains letters, numbers and _"})
         var User = new UserModel({
             username: req.body.username,
-            password: req.body.password,
-            name: req.body.name
+            password: req.body.password
         });
 
         User.save(function (err, User) {
-            if (err) {
+
+            if(err){
+                if (err.code === 11000) {
+                    return res.status(409).json({
+                        message: "Username already taken"
+                    });
+                }
+
                 return res.status(500).json({
                     message: 'Error when creating User',
                     error: err
@@ -70,17 +80,16 @@ module.exports = {
         });
     },
 
-    login: function (req, res, next) {
+    login: function (req, res) {
+        if(!isInputSafe(req.body.username))
+            return res.status(400).json({message : "Username should only contains letters, numbers and _"})
         UserModel.authenticate(req.body.username, req.body.password, function (error, user) {
             if (error || !user) {
                 var err = new Error("Wrong username or password");
-                err.status = 401;
-                return res.redirect('/user/login');
+                return res.status(401).json({
+                    err: err
+                });
             } else {
-                /*
-                    req.session.userId = user._id;
-                    req.session.username = user.username;
-                */
                 req.session.user = user;
                 return res.json(user);
             }
@@ -88,7 +97,8 @@ module.exports = {
     },
 
     logout: function (req, res) {
-        req.session.destroy();
+        if(req.session !== undefined)
+            req.session.destroy();
         res.status(205).json();
     },
 
@@ -96,7 +106,17 @@ module.exports = {
      * UserController.update()
      */
     update: function (req, res) {
+
         var id = req.params.id;
+
+        if(req.params.id !== req.session.user._id){
+            return res.status(403).json({
+                message: "Forbidden to modify User"
+            });
+        }
+
+        if(!isInputSafe(req.body.username))
+            return res.status(400).json({message : "Username should only contains letters, numbers and _"})
 
         UserModel.findOne({_id: id}, function (err, User) {
             if (err) {
@@ -112,7 +132,6 @@ module.exports = {
                 });
             }
 
-            User.name = req.body.name ? req.body.name : User.name;
             User.username = req.body.username ? req.body.username : User.username;
             User.password = req.body.password ? req.body.password : User.password;
 
