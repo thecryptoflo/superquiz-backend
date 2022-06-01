@@ -1,4 +1,3 @@
-var dbAuth = require('./dbdata');
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -8,7 +7,7 @@ var mongoose = require('mongoose');
 //CORS - React demo
 var cors = require('cors');
 
-var mongoDB = 'mongodb+srv://'+dbAuth+'@cluster0.mz8l1.mongodb.net/Quizz?retryWrites=true&w=majority';
+var mongoDB = process.env.MONGODB_URI+'/Quizz?retryWrites=true&w=majority';
 mongoose.connect(mongoDB,  { useNewUrlParser:true, useUnifiedTopology: true  });
 mongoose.Promise = global.Promise;
 var db = mongoose.connection;
@@ -34,7 +33,8 @@ app.use(session({
 
 var allowedOrigins = ['http://localhost:4200', 
                       'http://localhost:4100', 
-                      'http://localhost:3000'];
+                      'http://localhost:3000',
+  'https://superquizz.herokuapp.com/'];
 
 app.use(cors({
   credentials: true,
