@@ -35,7 +35,7 @@ var allowedOrigins = ['http://localhost:4200',
   'http://localhost:4100',
   'http://localhost:3000',
   'https://superquizz.herokuapp.com/'];
-
+/*
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", allowedOrigins);
   res.setHeader("Access-Control-Allow-Methods", "POST,GET,OPTIONS");
@@ -44,7 +44,7 @@ app.use((req, res, next) => {
   }
   next();
 });
-
+*/
 app.use(cors({
   credentials: true,
   origin: function(origin, callback){
