@@ -34,7 +34,7 @@ app.use(session({
 var allowedOrigins = ['http://localhost:4200',
   'http://localhost:4100',
   'http://localhost:3000',
-  'https://superquizz.herokuapp.com/'];
+  'https://superquizz.herokuapp.com'];
 /*
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", allowedOrigins);
