@@ -31,6 +31,15 @@ app.use(session({
   store: MongoStore.create({ mongoUrl: mongoDB })
 }));
 
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:4200");
+  res.setHeader("Access-Control-Allow-Methods", "POST,GET,OPTIONS");
+  if (req.method == "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 var allowedOrigins = ['http://localhost:4200', 
                       'http://localhost:4100', 
                       'http://localhost:3000',
